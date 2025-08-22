@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Settings } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Agent } from '../types';
 
 interface AgentConfigModalProps {

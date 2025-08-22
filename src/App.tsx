@@ -3,12 +3,15 @@ import EventTypeSelector from './components/EventTypeSelector';
 import AgentLibrary from './components/AgentLibrary';
 import EventBuilder from './components/EventBuilder';
 import SimulationView from './components/SimulationView';
+import SettingsModal from './components/SettingsModal';
+import { Settings } from 'lucide-react';
 import { Agent, EventType, Event } from './types';
 
 function App() {
   const [selectedEventType, setSelectedEventType] = useState<EventType | null>(null);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleEventTypeSelect = (eventType: EventType) => {
     setSelectedEventType(eventType);
@@ -85,14 +88,22 @@ function App() {
                 <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">Design multi-agent interactions and simulations</p>
               </div>
             </div>
-            {currentEvent && (
+            <div className="flex items-center space-x-3">
+              {currentEvent && (
+                <button
+                  onClick={handleResetEvent}
+                  className="px-4 sm:px-6 py-2 sm:py-2.5 bg-white/70 hover:bg-white/90 backdrop-blur-md text-gray-700 rounded-xl transition-all duration-200 border border-gray-200/50 shadow-sm hover:shadow-md transform hover:scale-[1.02] text-sm sm:text-base"
+                >
+                  New Event
+                </button>
+              )}
               <button
-                onClick={handleResetEvent}
-                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-white/70 hover:bg-white/90 backdrop-blur-md text-gray-700 rounded-xl transition-all duration-200 border border-gray-200/50 shadow-sm hover:shadow-md transform hover:scale-[1.02] text-sm sm:text-base"
+                onClick={() => setShowSettings(true)}
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100/70 hover:bg-gray-200/70 backdrop-blur-sm rounded-xl flex items-center justify-center transition-all duration-200 border border-gray-200/50"
               >
-                New Event
+                <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
-            )}
+            </div>
           </div>
         </div>
       </header>
@@ -102,8 +113,8 @@ function App() {
         {!selectedEventType ? (
           <EventTypeSelector onSelect={handleEventTypeSelect} />
         ) : isSimulating ? (
-          <SimulationView 
-            event={currentEvent!} 
+          <SimulationView
+            event={currentEvent!}
             onBack={() => setIsSimulating(false)}
           />
         ) : (
@@ -122,6 +133,7 @@ function App() {
           </div>
         )}
       </main>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
