@@ -11,7 +11,7 @@ interface DebatePhase {
   name: string;
   description: string;
   timeLimit: number;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<unknown>;
 }
 
 const debatePhases: DebatePhase[] = [
@@ -68,6 +68,7 @@ export default function SimulationView({ event, onBack }: SimulationViewProps) {
   const [simulationSteps, setSimulationSteps] = useState<SimulationStep[]>([]);
   const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
   const [agentScores, setAgentScores] = useState<{[key: string]: number}>({});
+  const [agentContexts, setAgentContexts] = useState<Record<string, string[]>>({});
 
   // Initialize agent scores
   useEffect(() => {
@@ -78,6 +79,15 @@ export default function SimulationView({ event, onBack }: SimulationViewProps) {
     setAgentScores(initialScores);
   }, [event.agents]);
 
+  // Initialize agent contexts
+  useEffect(() => {
+    const initialContexts: Record<string, string[]> = {};
+    event.agents.forEach(agent => {
+      initialContexts[agent.id] = [];
+    });
+    setAgentContexts(initialContexts);
+  }, [event.agents]);
+
   // Debate simulation logic
   useEffect(() => {
     if (!isRunning) return;
@@ -86,18 +96,32 @@ export default function SimulationView({ event, onBack }: SimulationViewProps) {
       const randomAgent = event.agents[Math.floor(Math.random() * event.agents.length)];
       const currentPhaseName = debatePhases[currentPhase]?.name || 'Opening Statements';
       const phaseMessages = debateMessages[currentPhaseName as keyof typeof debateMessages] || debateMessages['Opening Statements'];
-      const message = phaseMessages[Math.floor(Math.random() * phaseMessages.length)];
+      const contextForAgent = agentContexts[randomAgent.id] || [];
+      const contextPrefix = contextForAgent.length > 0 ? `In response to "${contextForAgent[contextForAgent.length - 1]}", ` : '';
+      const message = contextPrefix + phaseMessages[Math.floor(Math.random() * phaseMessages.length)];
 
       const newStep: SimulationStep = {
         agentId: randomAgent.id,
-        message: message,
+        message,
         timestamp: new Date(),
         round: currentPhase + 1,
-        phase: currentPhaseName
+        phase: currentPhaseName,
+        context: contextForAgent
       };
 
       setSimulationSteps(prev => [...prev, newStep]);
       setActiveAgent(randomAgent);
+
+      setAgentContexts(prev => {
+        const updated = { ...prev };
+        event.agents.forEach(agent => {
+          if (agent.id !== randomAgent.id) {
+            const history = updated[agent.id] || [];
+            updated[agent.id] = [...history, `${randomAgent.name}: ${message}`].slice(-5);
+          }
+        });
+        return updated;
+      });
 
       // Update scores based on performance
       setAgentScores(prev => ({
@@ -116,7 +140,7 @@ export default function SimulationView({ event, onBack }: SimulationViewProps) {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isRunning, event.agents, currentPhase, phaseTimer]);
+  }, [isRunning, event.agents, currentPhase, phaseTimer, agentContexts]);
 
   const getAgentById = (id: string) => event.agents.find(agent => agent.id === id);
 

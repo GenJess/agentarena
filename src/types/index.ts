@@ -35,4 +35,5 @@ export interface SimulationStep {
   timestamp: Date;
   round: number;
   phase?: string;
+  context?: string[];
 }
